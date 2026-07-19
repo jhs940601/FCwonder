@@ -920,7 +920,7 @@
 
 
   var TEAM_IDS = ["t1","t2","t3","t4","t5","t6"];
-  var TEAM_NAMES = { t1:"장혜수팀", t2:"전소올팀", t3:"김남형팀", t4:"강유라팀", t5:"장효원팀", t6:"구현정팀" };
+  var TEAM_NAMES = { t1:"A팀", t2:"B팀", t3:"C팀", t4:"D팀", t5:"E팀", t6:"F팀" };
   var MATCH_TEAMS = { g1:["A","B"], g2:["D","E"], g3:["B","C"], g4:["E","F"], g5:["A","C"], g6:["D","F"] };
   var MATCH_LABELS = { g1:"예선 1경기", g2:"예선 2경기", g3:"예선 3경기", g4:"예선 4경기", g5:"예선 5경기", g6:"예선 6경기", sf:"준결승", final:"결승" };
 
@@ -1167,7 +1167,8 @@
         ? '<img src="' + team.emblem + '" alt="' + TEAM_NAMES[tid] + ' 엠블럼">'
         : '<span>엠블럼</span>';
       var uploadHtml = isAdmin
-        ? '<label class="upload-btn" style="margin-top:8px;display:inline-block;">엠블럼 업로드<input type="file" accept="image/*" data-emblem-upload="' + tid + '" style="display:none;"></label>'
+        ? '<label class="upload-btn" style="margin-top:8px;display:inline-block;">엠블럼 업로드<input type="file" accept="image/*" data-emblem-upload="' + tid + '" style="display:none;"></label>' +
+          (team.emblem ? ' <button type="button" class="mini-btn danger" data-emblem-del="' + tid + '" style="margin-top:8px;">삭제</button>' : '')
         : '';
       var rows = team.players.map(function(p, i){
         if(isAdmin){
@@ -1200,6 +1201,14 @@
           saveState();
           buildTeamProfiles();
         });
+      });
+    });
+    grid.querySelectorAll('[data-emblem-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var tid = btn.getAttribute('data-emblem-del');
+        state.rosters[tid].emblem = "";
+        saveState();
+        buildTeamProfiles();
       });
     });
     grid.querySelectorAll('[data-roster-field]').forEach(function(inp){
