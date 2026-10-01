@@ -383,6 +383,10 @@
   .emblem img{width:100%;height:100%;object-fit:cover;}
   .emblem span{font-size:.62rem;color:var(--ink-soft);text-align:center;padding:0 4px;}
   .team-profile .tp-name{font-weight:800;font-size:1.05rem;}
+  .tp-name-input{
+    font-weight:800;font-size:1.05rem;font-family:inherit;color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:5px 8px;width:100%;
+  }
   .team-profile .tp-name-edit{font-weight:700;font-size:.95rem;width:100%;}
   .upload-btn{
     display:inline-block;font-size:.78rem;font-weight:700;color:var(--navy-deep);background:var(--paper);
@@ -929,6 +933,7 @@
 
   var TEAM_IDS = ["t1","t2","t3","t4","t5","t6"];
   var TEAM_NAMES = { t1:"A팀", t2:"B팀", t3:"C팀", t4:"D팀", t5:"E팀", t6:"F팀" };
+  function getTeamName(tid){ return (state.teamNames && state.teamNames[tid]) || TEAM_NAMES[tid]; }
   var MATCH_TEAMS = { g1:["A","B"], g2:["D","E"], g3:["B","C"], g4:["E","F"], g5:["A","C"], g6:["D","F"] };
   var MATCH_LABELS = { g1:"예선 1경기", g2:"예선 2경기", g3:"예선 3경기", g4:"예선 4경기", g5:"예선 5경기", g6:"예선 6경기", sf:"준결승 1경기", sf2:"준결승 2경기", final:"결승" };
 
@@ -948,6 +953,7 @@
       sf:{h:"",a:""}, sf2:{h:"",a:""}, final:{h:"",a:""}
     },
     notes: { "sf-note":"", "sf2-note":"", "final-note":"" },
+    teamNames: { t1:"FC쏘샬", t2:"종로WFC", t3:"FC원더티처", t4:"16.9", t5:"?", t6:"레벨업" },
     rosters: emptyRosters(),
     scorers: [],
     teamPhones: {},
@@ -978,7 +984,7 @@
     if(extra.content){ state.content = Object.assign({}, state.content, extra.content); }
   }
 
-  function teamLabelByTid(tid){ return (state.rosters[tid] && TEAM_NAMES[tid]) ? TEAM_NAMES[tid] : "미정"; }
+  function teamLabelByTid(tid){ return (state.rosters[tid] && getTeamName(tid)) ? getTeamName(tid) : "미정"; }
   function teamLabelByLetter(letter){
     var tid = state.teams[letter];
     return tid ? teamLabelByTid(tid) : (letter + "팀");
@@ -1160,7 +1166,7 @@
   function buildTeamSelectOptions(){
     document.querySelectorAll('select.team-select').forEach(function(sel){
       sel.innerHTML = TEAM_IDS.map(function(id){
-        return '<option value="' + id + '">' + TEAM_NAMES[id] + '</option>';
+        return '<option value="' + id + '">' + getTeamName(id) + '</option>';
       }).join('');
     });
   }
@@ -1172,7 +1178,7 @@
     grid.innerHTML = TEAM_IDS.map(function(tid){
       var team = state.rosters[tid];
       var emblemHtml = team.emblem
-        ? '<img src="' + team.emblem + '" alt="' + TEAM_NAMES[tid] + ' 엠블럼">'
+        ? '<img src="' + team.emblem + '" alt="' + getTeamName(tid) + ' 엠블럼">'
         : '<span>엠블럼</span>';
       var uploadHtml = isAdmin
         ? '<label class="upload-btn" style="margin-top:8px;display:inline-block;">엠블럼 업로드<input type="file" accept="image/*" data-emblem-upload="' + tid + '" style="display:none;"></label>' +
@@ -1194,7 +1200,7 @@
         : '';
       return '<div class="team-profile">' +
                '<div class="tp-head"><div class="emblem">' + emblemHtml + '</div>' +
-               '<div><div class="tp-name">' + TEAM_NAMES[tid] + '</div>' + uploadHtml + '</div></div>' +
+               '<div><div class="tp-name">' + (isAdmin ? '<input type="text" class="tp-name-input" value="' + getTeamName(tid) + '" data-team-name="' + tid + '">' : getTeamName(tid)) + '</div>' + uploadHtml + '</div></div>' +
                tableHtml + addRowHtml +
              '</div>';
     }).join('');
@@ -1216,6 +1222,19 @@
         var tid = btn.getAttribute('data-emblem-del');
         state.rosters[tid].emblem = "";
         saveState();
+        buildTeamProfiles();
+      });
+    });
+    grid.querySelectorAll('[data-team-name]').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var tid = inp.getAttribute('data-team-name');
+        if(!state.teamNames) state.teamNames = {};
+        state.teamNames[tid] = inp.value;
+        saveState();
+        buildTeamSelectOptions();
+        render();
+      });
+      inp.addEventListener('blur', function(){
         buildTeamProfiles();
       });
     });
@@ -1250,7 +1269,7 @@
     if(!grid) return;
     grid.innerHTML = TEAM_IDS.map(function(tid){
       var val = state.teamPhones[tid] || "";
-      return '<div class="card"><h3>' + TEAM_NAMES[tid] + '</h3><p>연락처 <input type="text" value="' + val + '" data-phone-field="' + tid + '" placeholder="010-0000-0000" style="border:1px solid var(--line);border-radius:8px;padding:5px 8px;"></p></div>';
+      return '<div class="card"><h3>' + getTeamName(tid) + '</h3><p>연락처 <input type="text" value="' + val + '" data-phone-field="' + tid + '" placeholder="010-0000-0000" style="border:1px solid var(--line);border-radius:8px;padding:5px 8px;"></p></div>';
     }).join('');
     grid.querySelectorAll('[data-phone-field]').forEach(function(inp){
       inp.addEventListener('input', function(){
@@ -1297,7 +1316,7 @@
     var addFormHtml = isAdmin
       ? '<div class="scorer-add">' +
           '<input type="text" id="scorer-name-input" placeholder="선수 이름">' +
-          '<select id="scorer-team-input">' + TEAM_IDS.map(function(id){ return '<option value="' + id + '">' + TEAM_NAMES[id] + '</option>'; }).join('') + '</select>' +
+          '<select id="scorer-team-input">' + TEAM_IDS.map(function(id){ return '<option value="' + id + '">' + getTeamName(id) + '</option>'; }).join('') + '</select>' +
           '<input type="number" id="scorer-goals-input" min="1" value="1" style="width:70px;">' +
           '<button type="button" class="mini-btn add" id="scorer-add-btn">+ 득점 기록 추가</button>' +
         '</div>'
